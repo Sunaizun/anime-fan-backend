@@ -1,22 +1,31 @@
 const Review = require('../models/Review');
 
-exports.createReview = async (req, res) => {
-  const { title, content, rating, anime } = req.body;
+exports.createReview = async (req, res, next) => {
+  try {
+    const { postId, content, rating } = req.body;
 
-  if (!title || !content || !rating || !anime?.malId) {
-    return res.status(400).json({ message: 'Missing required fields' });
+    if (!postId || !content || rating === undefined) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const r = Number(rating);
+    if (Number.isNaN(r) || r < 1 || r > 10) {
+      return res.status(400).json({ message: "Rating must be 1–10" });
+    }
+
+    const review = await Review.create({
+      post: postId,
+      content,
+      rating: r,
+      user: req.user.id
+    });
+
+    res.status(201).json(review);
+  } catch (err) {
+    next(err);
   }
-
-  const review = await Review.create({
-    title,
-    content,
-    rating,
-    anime,
-    user: req.userId
-  });
-
-  res.status(201).json(review);
 };
+
 
 
 exports.getMyReviews = async (req, res) => {
