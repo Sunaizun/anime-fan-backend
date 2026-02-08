@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:3000";
+const API_BASE = "https://anime-fan-backend.onrender.com";
 
 const TOKEN_KEY = "anime_token";
 
