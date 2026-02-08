@@ -2,10 +2,25 @@ const Post = require('../models/Post');
 
 exports.createPost = async (req, res, next) => {
   try {
-    const { title, content } = req.body;
-    if (!title || !content) return res.status(400).json({ message: 'Title and content are required' });
+    const { animeName, title, content } = req.body;
 
-    const post = await Post.create({ title, content, user: req.user.id });
+    if (!animeName || !title || !content) {
+      return res.status(400).json({ message: "animeName, title and content are required" });
+    }
+
+    const userId = req.user?.id || req.user?._id || req.userId || req.user;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized (no user id)" });
+    }
+
+    const post = await Post.create({
+      animeName,
+      title,
+      content,
+      user: userId,
+    });
+
     return res.status(201).json(post);
   } catch (err) {
     next(err);
@@ -33,12 +48,12 @@ exports.getPostById = async (req, res, next) => {
 
 exports.updatePost = async (req, res, next) => {
   try {
-    const { title, content } = req.body;
+    const { animeName, title, content } = req.body;
     if (!title || !content) return res.status(400).json({ message: 'Title and content are required' });
 
     const post = await Post.findOneAndUpdate(
       { _id: req.params.id, user: req.user.id },
-      { title, content },
+      { animeName, title, content },
       { new: true }
     );
     if (!post) return res.status(404).json({ message: 'Post not found' });
