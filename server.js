@@ -9,11 +9,17 @@ const app = express();
 
 app.use(express.json());
 
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use(require('./middleware/errorMiddleware'));
 app.use('/api/anime', require('./routes/animeRoutes'));
+
+
 
 
 app.listen(process.env.PORT, () => {
