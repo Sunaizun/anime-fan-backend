@@ -18,6 +18,7 @@ app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use(require('./middleware/errorMiddleware'));
 app.use('/api/anime', require('./routes/animeRoutes'));
+app.use('/api/posts', require('./routes/postRoutes'));
 
 
 

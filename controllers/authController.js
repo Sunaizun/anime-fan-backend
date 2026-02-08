@@ -2,10 +2,9 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-exports.register = async (req, res) => {
-  const { username, email, password } = req.body;
+exports.register = async (req, res, next) => {
   try {
-    
+    const { username, email, password } = req.body;
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'All fields are required' });
     }
@@ -15,12 +14,14 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Email already in use' });
     }
 
-    user = new User({ username, email, password });
-    await user.save();
-    
+    const user = await User.create({ username, email, password });
+
+    return res.status(201).json({
+      message: 'User registered',
+      user: { id: user._id, username: user.username, email: user.email }
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    return next(err);
   }
 };
 
