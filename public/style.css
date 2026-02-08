@@ -52,14 +52,7 @@ h1{margin:0;font-size:28px}
   z-index: 1;
 }
 
-.card{
-  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-  border: 1px solid rgba(148,163,184,.15);
-  box-shadow: var(--shadow);
-  border-radius: var(--radius);
-  padding: 16px;
-  backdrop-filter: blur(6px);
-}
+
 
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 
