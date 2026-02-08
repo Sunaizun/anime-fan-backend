@@ -5,9 +5,9 @@ exports.validateReview = (req, res, next) => {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
-  if (rating < 1 || rating > 10) {
-    return res.status(400).json({ message: 'Rating must be 1–10' });
-  }
+  if (rating && (rating < 1 || rating > 10)) {
+  return res.status(400).json({ message: "Rating must be 1-10" });
+}
 
   next();
 };
