@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Anime Fan – Frontend</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>🎌 Anime Fan</h1>
+      <p class="subtitle">Register • Login • Profile • Reviews</p>
+      <div class="top-actions">
+        <button id="logoutBtn" class="btn ghost hidden">Logout</button>
+      </div>
+    </header>
+
+    <div id="message" class="toast hidden"></div>
+
+    <main class="grid">
+      <!-- AUTH -->
+      <section class="card" id="authCard">
+        <div class="tabs">
+          <button class="tab active" id="tabRegister">Register</button>
+          <button class="tab" id="tabLogin">Login</button>
+        </div>
+
+        <form id="registerForm" class="form">
+          <label>Username</label>
+          <input type="text" name="username" placeholder="animeFan" required />
+
+          <label>Email</label>
+          <input type="email" name="email" placeholder="fan@anime.com" required />
+
+          <label>Password</label>
+          <input type="password" name="password" placeholder="••••••" required minlength="6"/>
+
+          <button class="btn primary" type="submit">Create account</button>
+        </form>
+
+        <form id="loginForm" class="form hidden">
+          <label>Email</label>
+          <input type="email" name="email" placeholder="fan@anime.com" required />
+
+          <label>Password</label>
+          <input type="password" name="password" placeholder="••••••" required />
+
+          <button class="btn primary" type="submit">Login</button>
+        </form>
+      </section>
+
+      <!-- PROFILE -->
+      <section class="card" id="profileCard">
+        <h2>👤 Profile</h2>
+        <div class="profile">
+          <div><span class="muted">Username:</span> <b id="pUsername">—</b></div>
+          <div><span class="muted">Email:</span> <b id="pEmail">—</b></div>
+          <div><span class="muted">Joined:</span> <b id="pCreated">—</b></div>
+        </div>
+
+        <form id="profileForm" class="form">
+          <h3>Update profile</h3>
+
+          <label>Username</label>
+          <input type="text" name="username" placeholder="new username" />
+
+          <label>Email</label>
+          <input type="email" name="email" placeholder="new email" />
+
+          <button class="btn" type="submit">Update</button>
+        </form>
+      </section>
+
+      <!-- REVIEWS -->
+      <section class="card" id="reviewsCard">
+        <div class="row">
+          <h2>⭐ Reviews</h2>
+          <button class="btn" id="refreshBtn">Refresh</button>
+        </div>
+
+        <form id="reviewForm" class="form">
+          <h3 id="reviewFormTitle">Create review</h3>
+
+          <label>Title</label>
+          <input type="text" name="title" placeholder="Attack on Titan is peak" required />
+
+          <label>Anime name</label>
+          <input type="text" name="animeName" placeholder="Attack on Titan" required />
+
+          <label>Content</label>
+          <textarea name="content" placeholder="Story and plot twists are insane..." required></textarea>
+
+          <label>Rating (1–10)</label>
+          <input type="number" name="rating" min="1" max="10" required />
+
+          <div class="row">
+            <button class="btn primary" type="submit" id="reviewSubmitBtn">Save</button>
+            <button class="btn ghost hidden" type="button" id="cancelEditBtn">Cancel</button>
+          </div>
+        </form>
+
+        <div id="reviewsList" class="list"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span class="muted">Tip: login first to access profile & reviews.</span>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
