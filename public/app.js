@@ -1,102 +1,121 @@
 const API_BASE = "https://anime-fan-backend.onrender.com";
 
-const tokenKey = "anime_token";
+const TOKEN_KEY = "anime_token";
 
-const el = (id) => document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 
-const tabRegister = el("tabRegister");
-const tabLogin = el("tabLogin");
-const registerForm = el("registerForm");
-const loginForm = el("loginForm");
-const logoutBtn = el("logoutBtn");
+const authSection = $("authSection");
+const appSection = $("appSection");
+const logoutBtn = $("logoutBtn");
 
-const pUsername = el("pUsername");
-const pEmail = el("pEmail");
-const pCreated = el("pCreated");
-const profileForm = el("profileForm");
+const registerForm = $("registerForm");
+const loginForm = $("loginForm");
+const goLogin = $("goLogin");
+const goRegister = $("goRegister");
+const authTitle = $("authTitle");
 
-const reviewForm = el("reviewForm");
-const reviewFormTitle = el("reviewFormTitle");
-const reviewSubmitBtn = el("reviewSubmitBtn");
-const cancelEditBtn = el("cancelEditBtn");
-const reviewsList = el("reviewsList");
-const refreshBtn = el("refreshBtn");
+const pUsername = $("pUsername");
+const pEmail = $("pEmail");
+const pCreated = $("pCreated");
+const reloadProfile = $("reloadProfile");
 
-let editReviewId = null;
+const postForm = $("postForm");
+const postsList = $("postsList");
+const refreshPosts = $("refreshPosts");
+
+function toast(msg, type = "success") {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = `toast ${type}`;
+  t.classList.remove("hidden");
+  setTimeout(() => t.classList.add("hidden"), 3500);
+}
 
 function getToken() {
-  return localStorage.getItem(tokenKey);
+  return localStorage.getItem(TOKEN_KEY);
 }
-function setToken(t) {
-  localStorage.setItem(tokenKey, t);
+function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
 }
 function clearToken() {
-  localStorage.removeItem(tokenKey);
-}
-
-function toast(message, type = "success") {
-  const m = el("message");
-  m.textContent = message;
-  m.className = `toast ${type}`;
-  m.classList.remove("hidden");
-  setTimeout(() => m.classList.add("hidden"), 3500);
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 async function api(path, options = {}) {
   const headers = options.headers || {};
   headers["Content-Type"] = "application/json";
 
-  const t = getToken();
-  if (t) headers["Authorization"] = `Bearer ${t}`;
+  const token = getToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
-    headers
+    headers,
   });
 
-  const contentType = res.headers.get("content-type") || "";
-  const data = contentType.includes("application/json") ? await res.json() : await res.text();
+  const ct = res.headers.get("content-type") || "";
+  const data = ct.includes("application/json") ? await res.json() : await res.text();
 
   if (!res.ok) {
-    const msg = data?.message || data || `HTTP ${res.status}`;
-    throw new Error(msg);
+    throw new Error(data?.message || data || `HTTP ${res.status}`);
   }
   return data;
 }
 
-tabRegister.addEventListener("click", () => {
-  tabRegister.classList.add("active");
-  tabLogin.classList.remove("active");
+//UI
+function showRegister() {
+  authTitle.textContent = "Create account";
   registerForm.classList.remove("hidden");
   loginForm.classList.add("hidden");
-});
-
-tabLogin.addEventListener("click", () => {
-  tabLogin.classList.add("active");
-  tabRegister.classList.remove("active");
+}
+function showLogin() {
+  authTitle.textContent = "Login";
   loginForm.classList.remove("hidden");
   registerForm.classList.add("hidden");
+}
+function showApp() {
+  authSection.classList.add("hidden");
+  appSection.classList.remove("hidden");
+  logoutBtn.classList.remove("hidden");
+}
+function showAuth() {
+  authSection.classList.remove("hidden");
+  appSection.classList.add("hidden");
+  logoutBtn.classList.add("hidden");
+  showRegister();
+}
+
+//EVENTS
+goLogin.addEventListener("click", (e) => {
+  e.preventDefault();
+  showLogin();
+});
+goRegister.addEventListener("click", (e) => {
+  e.preventDefault();
+  showRegister();
 });
 
-// AUTH
+logoutBtn.addEventListener("click", () => {
+  clearToken();
+  toast("Logged out", "success");
+  showAuth();
+});
+
+//AUTH
 registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const form = e.target;
-
+  const f = e.target;
   const payload = {
-    username: form.username.value.trim(),
-    email: form.email.value.trim(),
-    password: form.password.value
+    username: f.username.value.trim(),
+    email: f.email.value.trim(),
+    password: f.password.value,
   };
 
   try {
-    await api("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-    toast("Registered! Now login.", "success");
-    form.reset();
-    tabLogin.click();
+    await api("/api/auth/register", { method: "POST", body: JSON.stringify(payload) });
+    toast("Registered! Now login please.", "success");
+    f.reset();
+    showLogin(); 
   } catch (err) {
     toast(err.message, "error");
   }
@@ -104,213 +123,181 @@ registerForm.addEventListener("submit", async (e) => {
 
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const form = e.target;
-
+  const f = e.target;
   const payload = {
-    email: form.email.value.trim(),
-    password: form.password.value
+    email: f.email.value.trim(),
+    password: f.password.value,
   };
 
   try {
-    const data = await api("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
+    const data = await api("/api/auth/login", { method: "POST", body: JSON.stringify(payload) });
     if (!data.token) throw new Error("No token returned from server");
     setToken(data.token);
 
-    toast("Login successful!", "success");
-    form.reset();
-    logoutBtn.classList.remove("hidden");
+    toast(" Login successful!", "success");
+    f.reset();
 
+    showApp();                
     await loadProfile();
-    await loadReviews();
+    await loadPosts();
   } catch (err) {
     toast(err.message, "error");
   }
 });
 
-logoutBtn.addEventListener("click", () => {
-  clearToken();
-  logoutBtn.classList.add("hidden");
-  toast("Logged out.", "success");
-  resetProfileUI();
-  reviewsList.innerHTML = "";
-});
-
-// PROFILE
-function resetProfileUI() {
-  pUsername.textContent = "—";
-  pEmail.textContent = "—";
-  pCreated.textContent = "—";
-}
+//PROFILE
+reloadProfile.addEventListener("click", loadProfile);
 
 async function loadProfile() {
-  try {
-    const user = await api("/api/users/profile");
-    pUsername.textContent = user.username || user.name || "—";
-    pEmail.textContent = user.email || "—";
-    pCreated.textContent = user.createdAt ? new Date(user.createdAt).toLocaleString() : "—";
-  } catch (err) {
-    toast("Login required to view profile.", "error");
-  }
+  const user = await api("/api/users/profile");
+  pUsername.textContent = user.username || "—";
+  pEmail.textContent = user.email || "—";
+  pCreated.textContent = user.createdAt ? new Date(user.createdAt).toLocaleString() : "—";
 }
 
-profileForm.addEventListener("submit", async (e) => {
+//POSTS
+refreshPosts.addEventListener("click", loadPosts);
+
+postForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const form = e.target;
-
-  const payload = {};
-  if (form.username.value.trim()) payload.username = form.username.value.trim();
-  if (form.email.value.trim()) payload.email = form.email.value.trim();
-
-  if (Object.keys(payload).length === 0) {
-    toast("Enter username/email to update.", "error");
-    return;
-  }
-
-  try {
-    const updated = await api("/api/users/profile", {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    });
-    toast("Profile updated!", "success");
-    form.reset();
-    pUsername.textContent = updated.username || pUsername.textContent;
-    pEmail.textContent = updated.email || pEmail.textContent;
-  } catch (err) {
-    toast(err.message, "error");
-  }
-});
-
-// REVIEWS
-refreshBtn.addEventListener("click", loadReviews);
-
-reviewForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const form = e.target;
+  const f = e.target;
 
   const payload = {
-    title: form.title.value.trim(),
-    animeName: form.animeName.value.trim(),
-    content: form.content.value.trim(),
-    rating: Number(form.rating.value),
+    animeName: f.animeName.value.trim(),
+    title: f.title.value.trim(),
+    content: f.content.value.trim(),
   };
 
   try {
-    if (editReviewId) {
-      await api(`/api/reviews/${editReviewId}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      });
-      toast("Review updated!", "success");
-    } else {
-      await api("/api/reviews", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-      toast("Review created!", "success");
-    }
-
-    form.reset();
-    stopEditMode();
-    await loadReviews();
+    await api("/api/posts", { method: "POST", body: JSON.stringify(payload) });
+    toast("✅ Post created!", "success");
+    f.reset();
+    await loadPosts();
   } catch (err) {
     toast(err.message, "error");
   }
 });
 
-cancelEditBtn.addEventListener("click", () => {
-  reviewForm.reset();
-  stopEditMode();
-});
-
-function startEditMode(review) {
-  editReviewId = review._id;
-  reviewFormTitle.textContent = "Edit review";
-  reviewSubmitBtn.textContent = "Update";
-  cancelEditBtn.classList.remove("hidden");
-
-  reviewForm.title.value = review.title || "";
-  reviewForm.animeName.value = review.animeName || "";
-  reviewForm.content.value = review.content || "";
-  reviewForm.rating.value = review.rating ?? "";
-  window.scrollTo({ top: 0, behavior: "smooth" });
+async function loadPosts() {
+  const posts = await api("/api/posts"); 
+  renderPosts(Array.isArray(posts) ? posts : []);
 }
 
-function stopEditMode() {
-  editReviewId = null;
-  reviewFormTitle.textContent = "Create review";
-  reviewSubmitBtn.textContent = "Save";
-  cancelEditBtn.classList.add("hidden");
+function renderPosts(posts) {
+  postsList.innerHTML = "";
+
+  if (posts.length === 0) {
+    postsList.innerHTML = `<p class="muted">No posts yet. Create one above.</p>`;
+    return;
+  }
+
+  posts.forEach((post) => {
+    const div = document.createElement("div");
+    div.className = "item";
+
+    div.innerHTML = `
+      <h3>${escapeHtml(post.title)}</h3>
+      <p class="small">Anime: <b>${escapeHtml(post.animeName)}</b></p>
+      <p>${escapeHtml(post.content)}</p>
+
+      <div class="reviewBox">
+        <h4>Reviews under this post</h4>
+        <form class="reviewForm">
+          <label>Review</label>
+          <textarea name="content" required placeholder="Write your review..."></textarea>
+
+          <label>Rating (1–10)</label>
+          <input type="number" name="rating" min="1" max="10" required />
+
+          <button class="btn primary" type="submit">Add review</button>
+        </form>
+
+        <div class="reviewsList"></div>
+      </div>
+    `;
+
+    postsList.appendChild(div);
+
+   
+    const reviewsList = div.querySelector(".reviewsList");
+    loadReviewsForPost(post._id, reviewsList);
+
+    
+    const reviewForm = div.querySelector(".reviewForm");
+    reviewForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const content = reviewForm.content.value.trim();
+      const rating = Number(reviewForm.rating.value);
+
+      try {
+        await api("/api/reviews", {
+          method: "POST",
+          body: JSON.stringify({
+            postId: post._id,   
+            animeName: post.animeName,
+            title: `Review for: ${post.title}`,
+            content,
+            rating
+          }),
+        });
+
+        toast("✅ Review added!", "success");
+        reviewForm.reset();
+        await loadReviewsForPost(post._id, reviewsList);
+      } catch (err) {
+        toast(err.message, "error");
+      }
+    });
+  });
 }
 
-async function loadReviews() {
+//REVIEW
+async function loadReviewsForPost(postId, container) {
   try {
-    const reviews = await api("/api/reviews");
-    renderReviews(reviews);
-  } catch (err) {
-    toast("Login required to view reviews.", "error");
+    const reviews = await api(`/api/reviews?postId=${postId}`);
+    renderReviews(container, Array.isArray(reviews) ? reviews : []);
+  } catch {
+    container.innerHTML = `<p class="muted">No reviews (or route not supported yet).</p>`;
   }
 }
 
-function renderReviews(reviews) {
-  reviewsList.innerHTML = "";
-  if (!Array.isArray(reviews) || reviews.length === 0) {
-    reviewsList.innerHTML = `<p class="muted">No reviews yet.</p>`;
+function renderReviews(container, reviews) {
+  container.innerHTML = "";
+
+  if (reviews.length === 0) {
+    container.innerHTML = `<p class="muted">No reviews yet.</p>`;
     return;
   }
 
   reviews.forEach((r) => {
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <h4>${escapeHtml(r.title)}</h4>
-      <p>${escapeHtml(r.content)}</p>
-      <p class="meta">Anime: <b>${escapeHtml(r.animeName)}</b></p>
-      <div class="badge">
-        <span class="rating">⭐ ${r.rating}/10</span>
-        <span class="meta">Updated: ${r.updatedAt ? new Date(r.updatedAt).toLocaleString() : ""}</span>
-      </div>
-      <div class="actions">
-        <button class="btn" data-edit="${r._id}">Edit</button>
-        <button class="btn danger" data-del="${r._id}">Delete</button>
-      </div>
+    const item = document.createElement("div");
+    item.className = "item";
+    item.innerHTML = `
+      <p><b>⭐ ${r.rating}/10</b> — ${escapeHtml(r.content)}</p>
+      <p class="small">by ${escapeHtml(r.user?.username || "user")} • ${r.createdAt ? new Date(r.createdAt).toLocaleString() : ""}</p>
     `;
-    reviewsList.appendChild(div);
-
-    div.querySelector(`[data-edit="${r._id}"]`).addEventListener("click", () => startEditMode(r));
-    div.querySelector(`[data-del="${r._id}"]`).addEventListener("click", () => deleteReview(r._id));
+    container.appendChild(item);
   });
-}
-
-async function deleteReview(id) {
-  if (!confirm("Delete this review?")) return;
-  try {
-    await api(`/api/reviews/${id}`, { method: "DELETE" });
-    toast("Review deleted.", "success");
-    await loadReviews();
-  } catch (err) {
-    toast(err.message, "error");
-  }
 }
 
 function escapeHtml(str = "") {
   return String(str).replace(/[&<>"']/g, (s) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
   }[s]));
 }
 
-//Init
+//INIT
 (async function init() {
+  showAuth(); 
+
   if (getToken()) {
-    logoutBtn.classList.remove("hidden");
-    await loadProfile();
-    await loadReviews();
+    try {
+      showApp();
+      await loadProfile();
+      await loadPosts();
+    } catch {
+      clearToken();
+      showAuth();
+    }
   }
 })();
