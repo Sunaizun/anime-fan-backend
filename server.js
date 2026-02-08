@@ -19,6 +19,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use(require('./middleware/errorMiddleware'));
 app.use('/api/anime', require('./routes/animeRoutes'));
 app.use('/api/posts', require('./routes/postRoutes'));
+app.use(express.static('public'));
 
 
 
