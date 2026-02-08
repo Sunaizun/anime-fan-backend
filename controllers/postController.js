@@ -29,12 +29,16 @@ exports.createPost = async (req, res, next) => {
 
 exports.getPosts = async (req, res, next) => {
   try {
-    const posts = await Post.find({ user: req.user.id }).sort({ createdAt: -1 });
+    const userId = req.user?.id || req.user?._id || req.userId || req.user;
+    if (!userId) return res.status(401).json({ message: "Unauthorized (no user id)" });
+
+    const posts = await Post.find({ user: userId }).sort({ createdAt: -1 });
     return res.json(posts);
   } catch (err) {
     next(err);
   }
 };
+
 
 exports.getPostById = async (req, res, next) => {
   try {
